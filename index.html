@@ -3,122 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G.t-Binary Pro</title>
+    <title>G.t-Binary PRO - Candles</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #050505; color: #ffffff; font-family: sans-serif; overflow-x: hidden; }
-        .glass { background: rgba(17, 17, 17, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .price-up { color: #00ff88; text-shadow: 0 0 10px #00ff8855; }
-        .price-down { color: #ff3366; text-shadow: 0 0 10px #ff336655; }
-        .win-tag { background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid #00ff8855; }
+        body { background: #050505; color: #ffffff; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(17, 17, 17, 0.98); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-text-green { color: #00ff88; text-shadow: 0 0 15px rgba(0, 255, 136, 0.4); }
+        .neon-text-red { color: #ff3366; text-shadow: 0 0 15px rgba(255, 51, 102, 0.4); }
     </style>
 </head>
-<body class="min-h-screen p-4 bg-[#050505]">
-    <div class="max-w-5xl mx-auto space-y-6">
-        <div class="glass p-6 rounded-2xl flex justify-between items-center border-l-4 border-l-green-500">
+<body class="min-h-screen p-4">
+    <div class="max-w-6xl mx-auto space-y-4">
+        
+        <div class="glass p-5 rounded-3xl flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-black tracking-tighter">G.t-<span class="text-green-400">Binary</span> <span class="text-xs bg-white text-black px-2 py-0.5 rounded ml-2">PRO</span></h1>
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Algoritmo de Alta Frequência</p>
-            </div>
-            <div id="currentPrice" class="text-3xl font-mono font-bold">1.08472</div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2 glass p-4 rounded-2xl h-80 relative">
-                <canvas id="binaryChart"></canvas>
-            </div>
-
-            <div id="signalCard" class="glass p-6 rounded-2xl text-center space-y-4 transition-all duration-500">
-                <p class="text-gray-400 text-xs font-bold tracking-widest uppercase">Análise em Tempo Real</p>
-                <div id="signalDir" class="text-6xl font-black">--</div>
-                <div class="space-y-2 pt-4">
-                    <button onclick="registrarClick('COMPRA')" class="w-full bg-green-500 hover:bg-green-400 py-4 rounded-xl font-bold text-black transition-transform active:scale-95">COMPRA</button>
-                    <button onclick="registrarClick('VENDA')" class="w-full bg-red-500 hover:bg-red-400 py-4 rounded-xl font-bold text-white transition-transform active:scale-95">VENDA</button>
+                <h1 class="text-xl font-black">G.t-<span class="text-green-500">Binary</span> PRO</h1>
+                <div class="flex items-center text-[10px] text-gray-500 tracking-widest uppercase">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></span> Mercado Aberto
                 </div>
             </div>
+            <div id="priceDisplay" class="text-2xl font-mono font-bold text-green-400">1.08525</div>
         </div>
 
-        <div class="glass rounded-2xl overflow-hidden">
-            <div class="p-4 border-b border-white/10 bg-white/5 font-bold text-sm flex items-center">
-                <i class="fas fa-history mr-2 text-green-400"></i> ÚLTIMAS ENTRADAS (HISTÓRICO WIN)
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 glass rounded-3xl overflow-hidden h-[450px] relative" id="chartContainer">
+                <div class="absolute top-4 left-4 z-10 bg-black/60 px-3 py-1 rounded text-xs font-mono">EUR/USD - M1</div>
             </div>
-            <div id="historyList" class="divide-y divide-white/5 text-sm">
+
+            <div class="space-y-4">
+                <div class="glass p-6 rounded-3xl text-center relative overflow-hidden">
+                    <p class="text-gray-400 text-xs font-bold uppercase mb-2">Próxima Entrada</p>
+                    
+                    <div id="signalDir" class="text-6xl font-black mb-4 tracking-tighter text-gray-700">AGUARDANDO</div>
+                    
+                    <div class="bg-white/5 rounded-2xl py-3 px-4 mb-6">
+                        <p class="text-[10px] text-gray-500 uppercase mb-1">Analisando em...</p>
+                        <div id="timer" class="text-3xl font-mono font-bold text-blue-400">00:15</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="bg-green-500 hover:bg-green-400 py-4 rounded-2xl font-bold text-black shadow-lg shadow-green-900/20 active:scale-95 transition">COMPRA</button>
+                        <button class="bg-red-500 hover:bg-red-400 py-4 rounded-2xl font-bold shadow-lg shadow-red-900/20 active:scale-95 transition">VENDA</button>
+                    </div>
                 </div>
+
+                <div class="glass p-5 rounded-3xl">
+                    <p class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-tighter">Sinais Anteriores</p>
+                    <div id="miniHistory" class="space-y-2">
+                        </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const ctx = document.getElementById('binaryChart').getContext('2d');
-        let dataP = Array.from({length: 30}, () => 1.08472 + (Math.random() * 0.002));
-        
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: Array(30).fill(''),
-                datasets: [{ 
-                    data: dataP, 
-                    borderColor: '#00ff88', 
-                    borderWidth: 3, 
-                    tension: 0.4, 
-                    pointRadius: 0,
-                    fill: true,
-                    backgroundColor: 'rgba(0, 255, 136, 0.05)'
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                scales: { x: {display: false}, y: {display: false} },
-                plugins: { legend: {display: false} }
-            }
+        // Configuração do Gráfico de Velas (Lightweight Charts)
+        const chartElement = document.getElementById('chartContainer');
+        const chart = LightweightCharts.createChart(chartElement, {
+            layout: { backgroundColor: '#0a0a0a', textColor: '#d1d4dc' },
+            grid: { vertLines: { color: '#1f2937' }, horzLines: { color: '#1f2937' } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            rightPriceScale: { borderColor: '#1f2937' },
+            timeScale: { borderColor: '#1f2937', timeVisible: true },
         });
 
-        let price = 1.08472;
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: '#00ff88', downColor: '#ff3366', borderDownColor: '#ff3366',
+            borderUpColor: '#00ff88', wickDownColor: '#ff3366', wickUpColor: '#00ff88',
+        });
+
+        // Gerar dados iniciais de velas
+        let lastClose = 1.08525;
+        let data = [];
+        let time = Math.floor(Date.now() / 1000) - 150 * 60;
+        for (let i = 0; i < 150; i++) {
+            const open = lastClose;
+            const close = open + (Math.random() - 0.5) * 0.001;
+            const high = Math.max(open, close) + Math.random() * 0.0005;
+            const low = Math.min(open, close) - Math.random() * 0.0005;
+            data.push({ time: time, open, high, low, close });
+            lastClose = close;
+            time += 60;
+        }
+        candleSeries.setData(data);
+
+        // Atualização em tempo real (Tick)
         setInterval(() => {
-            const diff = (Math.random() - 0.5) * 0.0001;
-            price += diff;
-            const el = document.getElementById('currentPrice');
-            el.innerText = price.toFixed(5);
-            el.className = diff >= 0 ? 'text-3xl font-mono font-bold price-up' : 'text-3xl font-mono font-bold price-down';
-            
-            chart.data.datasets[0].data.shift();
-            chart.data.datasets[0].data.push(price);
-            chart.data.datasets[0].borderColor = diff >= 0 ? '#00ff88' : '#ff3366';
-            chart.update('none');
+            const lastCandle = data[data.length - 1];
+            const newClose = lastCandle.close + (Math.random() - 0.5) * 0.0001;
+            lastCandle.close = newClose;
+            lastCandle.high = Math.max(lastCandle.high, newClose);
+            lastCandle.low = Math.min(lastCandle.low, newClose);
+            candleSeries.update(lastCandle);
+            document.getElementById('priceDisplay').innerText = newClose.toFixed(5);
         }, 1000);
 
-        function updateSignal() {
+        // Lógica do Timer e Sinais
+        let timeLeft = 15;
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            const signalEl = document.getElementById('signalDir');
+            
+            setInterval(() => {
+                timeLeft--;
+                if (timeLeft < 0) {
+                    timeLeft = 15; // Reinicia o ciclo de análise
+                    gerarNovoSinal();
+                }
+                timerEl.innerText = 00:${timeLeft < 10 ? '0' + timeLeft : timeLeft};
+                
+                // Muda a cor do timer quando está chegando a hora
+                if (timeLeft <= 5) timerEl.className = "text-3xl font-mono font-bold text-yellow-500 animate-pulse";
+                else timerEl.className = "text-3xl font-mono font-bold text-blue-400";
+            }, 1000);
+        }
+
+        function gerarNovoSinal() {
             const isUp = Math.random() > 0.5;
-            const s = document.getElementById('signalDir');
-            const card = document.getElementById('signalCard');
-            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const signalEl = document.getElementById('signalDir');
+            const direction = isUp ? 'CALL' : 'PUT';
             
-            s.innerText = isUp ? 'CALL' : 'PUT';
-            s.className = isUp ? 'text-6xl font-black text-green-400 animate-pulse' : 'text-6xl font-black text-red-500 animate-pulse';
+            signalEl.innerText = direction;
+            signalEl.className = isUp ? "text-6xl font-black mb-4 neon-text-green animate-bounce" : "text-6xl font-black mb-4 neon-text-red animate-bounce";
             
-            // Adicionar ao histórico
-            const history = document.getElementById('historyList');
-            const entry = document.createElement('div');
-            entry.className = 'p-4 flex justify-between items-center bg-black/20';
-            entry.innerHTML = `
-                <div class="flex items-center space-x-4">
-                    <span class="text-gray-500 font-mono text-xs">${time}</span>
-                    <span class="font-bold ${isUp ? 'text-green-400' : 'text-red-500'}">EUR/USD - ${isUp ? 'CALL' : 'PUT'}</span>
-                </div>
-                <span class="win-tag px-3 py-1 rounded-full text-[10px] font-bold">WIN</span>
-            `;
-            if(history.children.length > 5) history.lastChild.remove();
-            history.prepend(entry);
+            // Adicionar ao mini histórico
+            const hist = document.getElementById('miniHistory');
+            const item = document.createElement('div');
+            item.className = "flex justify-between items-center text-xs bg-white/5 p-2 rounded-xl";
+            item.innerHTML = <span>${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span> <b class="${isUp ? 'text-green-400' : 'text-red-500'}">${direction}</b> <span class="text-green-500 font-bold italic">WIN</span>;
+            if (hist.children.length > 3) hist.lastChild.remove();
+            hist.prepend(item);
         }
 
-        setInterval(updateSignal, 15000); // Sinal novo a cada 15 segundos
-        updateSignal();
-
-        function registrarClick(tipo) {
-            alert(tipo + " registrado no G.t-Binary Pro! Analisando expiração...");
-        }
+        startTimer();
     </script>
 </body>
 </html>
