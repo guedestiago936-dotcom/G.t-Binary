@@ -3,152 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KimiBinary Pro - Análise para Opções Binárias</title>
+    <title>G.t-Binary Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-                    colors: {
-                        binary: { bg: '#050505', card: '#0a0a0a', surface: '#111111', accent: '#00ff88', call: '#00ff88', put: '#ff3366', neutral: '#ffaa00', info: '#00ccff' }
-                    },
-                    animation: { 'pulse-fast': 'pulse 1.5s infinite', 'flash-green': 'flashGreen 0.5s ease-in-out', 'flash-red': 'flashRed 0.5s ease-in-out' },
-                    keyframes: {
-                        flashGreen: { '0%, 100%': { backgroundColor: 'transparent' }, '50%': { backgroundColor: 'rgba(0, 255, 136, 0.3)' } },
-                        flashRed: { '0%, 100%': { backgroundColor: 'transparent' }, '50%': { backgroundColor: 'rgba(255, 51, 102, 0.3)' } }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
-        body { background: #050505; color: #ffffff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass-panel { background: rgba(17, 17, 17, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .neon-border-green { box-shadow: 0 0 20px rgba(0, 255, 136, 0.2); border: 1px solid rgba(0, 255, 136, 0.4); }
-        .neon-border-red { box-shadow: 0 0 20px rgba(255, 51, 102, 0.2); border: 1px solid rgba(255, 51, 102, 0.4); }
-        .price-up { color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
-        .price-down { color: #ff3366; text-shadow: 0 0 10px rgba(255, 51, 102, 0.5); }
-        .chart-grid { background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 20px 20px; }
-        .btn-call { background: linear-gradient(135deg, #00cc66 0%, #00ff88 100%); }
-        .btn-put { background: linear-gradient(135deg, #cc0033 0%, #ff3366 100%); }
+        body { background: #050505; color: #ffffff; font-family: sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(17, 17, 17, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .price-up { color: #00ff88; text-shadow: 0 0 10px #00ff8855; }
+        .price-down { color: #ff3366; text-shadow: 0 0 10px #ff336655; }
+        .win-tag { background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid #00ff8855; }
     </style>
 </head>
-<body class="min-h-screen">
-
-    <header class="glass-panel sticky top-0 z-50 border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-binary-accent to-binary-info flex items-center justify-center shadow-lg">
-                    <i class="fas fa-bolt text-black text-xl"></i>
-                </div>
-                <h1 class="text-xl font-bold">Kimi<span class="text-binary-accent">Binary</span> Pro</h1>
+<body class="min-h-screen p-4 bg-[#050505]">
+    <div class="max-w-5xl mx-auto space-y-6">
+        <div class="glass p-6 rounded-2xl flex justify-between items-center border-l-4 border-l-green-500">
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter">G.t-<span class="text-green-400">Binary</span> <span class="text-xs bg-white text-black px-2 py-0.5 rounded ml-2">PRO</span></h1>
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Algoritmo de Alta Frequência</p>
             </div>
-            <div class="flex items-center space-x-2 text-xs text-binary-accent font-bold">
-                <span class="w-2 h-2 bg-binary-accent rounded-full animate-pulse"></span> SERVIDOR ATIVO
-            </div>
+            <div id="currentPrice" class="text-3xl font-mono font-bold">1.08472</div>
         </div>
-    </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 space-y-4">
-                <div class="glass-panel rounded-2xl p-4">
-                    <div class="flex justify-between mb-4">
-                        <span class="text-xl font-bold font-mono" id="assetName">EUR/USD</span>
-                        <span class="text-2xl font-bold font-mono" id="currentPrice">1.08472</span>
-                    </div>
-                    <div class="h-80 chart-grid relative rounded-xl border border-white/5 overflow-hidden">
-                        <canvas id="binaryChart"></canvas>
-                    </div>
-                </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 glass p-4 rounded-2xl h-80 relative">
+                <canvas id="binaryChart"></canvas>
             </div>
 
-            <div class="space-y-4">
-                <div id="mainSignal" class="glass-panel rounded-2xl p-6 border border-binary-accent/30 neon-border-green transition-all duration-500">
-                    <div class="text-center">
-                        <p class="text-xs text-gray-400 mb-2">SINAL DA INTELIGÊNCIA ARTIFICIAL</p>
-                        <h2 id="signalDirection" class="text-5xl font-extrabold text-binary-accent mb-4">CALL</h2>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="trade('COMPRA')" class="btn-call py-4 rounded-xl font-bold text-black hover:opacity-90 active:scale-95 transition">COMPRA</button>
-                            <button onclick="trade('VENDA')" class="btn-put py-4 rounded-xl font-bold text-white hover:opacity-90 active:scale-95 transition">VENDA</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-2xl p-5 border border-white/10">
-                    <h3 class="font-bold mb-4"><i class="fas fa-calculator mr-2 text-binary-info"></i>Gerenciamento Soros</h3>
-                    <div class="space-y-4">
-                        <input type="number" id="entryValue" value="20" oninput="calcSoros()" class="w-full bg-binary-surface border border-white/10 rounded-lg p-2 text-white font-mono">
-                        <div class="bg-black/40 p-3 rounded-lg text-sm space-y-2">
-                            <div class="flex justify-between"><span>Nível 1:</span> <span id="lv1" class="font-mono text-binary-accent">R$ 37.00</span></div>
-                            <div class="flex justify-between"><span>Nível 2:</span> <span id="lv2" class="font-mono text-binary-accent">R$ 68.45</span></div>
-                        </div>
-                    </div>
+            <div id="signalCard" class="glass p-6 rounded-2xl text-center space-y-4 transition-all duration-500">
+                <p class="text-gray-400 text-xs font-bold tracking-widest uppercase">Análise em Tempo Real</p>
+                <div id="signalDir" class="text-6xl font-black">--</div>
+                <div class="space-y-2 pt-4">
+                    <button onclick="registrarClick('COMPRA')" class="w-full bg-green-500 hover:bg-green-400 py-4 rounded-xl font-bold text-black transition-transform active:scale-95">COMPRA</button>
+                    <button onclick="registrarClick('VENDA')" class="w-full bg-red-500 hover:bg-red-400 py-4 rounded-xl font-bold text-white transition-transform active:scale-95">VENDA</button>
                 </div>
             </div>
         </div>
-    </main>
+
+        <div class="glass rounded-2xl overflow-hidden">
+            <div class="p-4 border-b border-white/10 bg-white/5 font-bold text-sm flex items-center">
+                <i class="fas fa-history mr-2 text-green-400"></i> ÚLTIMAS ENTRADAS (HISTÓRICO WIN)
+            </div>
+            <div id="historyList" class="divide-y divide-white/5 text-sm">
+                </div>
+        </div>
+    </div>
 
     <script>
-        // 1. Configuração do Gráfico
         const ctx = document.getElementById('binaryChart').getContext('2d');
-        let chartData = Array.from({length: 30}, () => 1.08472 + (Math.random() - 0.5) * 0.001);
+        let dataP = Array.from({length: 30}, () => 1.08472 + (Math.random() * 0.002));
+        
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: Array(30).fill(''),
-                datasets: [{
-                    data: chartData,
-                    borderColor: '#00ff88',
-                    borderWidth: 3,
-                    tension: 0.4,
+                datasets: [{ 
+                    data: dataP, 
+                    borderColor: '#00ff88', 
+                    borderWidth: 3, 
+                    tension: 0.4, 
+                    pointRadius: 0,
                     fill: true,
-                    backgroundColor: 'rgba(0, 255, 136, 0.05)',
-                    pointRadius: 0
+                    backgroundColor: 'rgba(0, 255, 136, 0.05)'
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x: {display: false}, y: {display: false} }, plugins: {legend: {display: false}} }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: { x: {display: false}, y: {display: false} },
+                plugins: { legend: {display: false} }
+            }
         });
 
-        // 2. Atualização em Tempo Real
         let price = 1.08472;
         setInterval(() => {
-            const change = (Math.random() - 0.5) * 0.0001;
-            price += change;
-            document.getElementById('currentPrice').innerText = price.toFixed(5);
-            document.getElementById('currentPrice').className = change >= 0 ? 'text-2xl font-bold font-mono price-up' : 'text-2xl font-bold font-mono price-down';
+            const diff = (Math.random() - 0.5) * 0.0001;
+            price += diff;
+            const el = document.getElementById('currentPrice');
+            el.innerText = price.toFixed(5);
+            el.className = diff >= 0 ? 'text-3xl font-mono font-bold price-up' : 'text-3xl font-mono font-bold price-down';
             
             chart.data.datasets[0].data.shift();
             chart.data.datasets[0].data.push(price);
-            chart.data.datasets[0].borderColor = change >= 0 ? '#00ff88' : '#ff3366';
+            chart.data.datasets[0].borderColor = diff >= 0 ? '#00ff88' : '#ff3366';
             chart.update('none');
         }, 1000);
 
-        // 3. Sistema de Sinais
-        function newSignal() {
-            const isCall = Math.random() > 0.5;
-            const dir = document.getElementById('signalDirection');
-            const card = document.getElementById('mainSignal');
+        function updateSignal() {
+            const isUp = Math.random() > 0.5;
+            const s = document.getElementById('signalDir');
+            const card = document.getElementById('signalCard');
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
-            dir.innerText = isCall ? 'CALL' : 'PUT';
-            dir.style.color = isCall ? '#00ff88' : '#ff3366';
-            card.className = isCall ? "glass-panel rounded-2xl p-6 border border-binary-accent/30 neon-border-green animate-flash-green" : "glass-panel rounded-2xl p-6 border border-binary-put/30 neon-border-red animate-flash-red";
+            s.innerText = isUp ? 'CALL' : 'PUT';
+            s.className = isUp ? 'text-6xl font-black text-green-400 animate-pulse' : 'text-6xl font-black text-red-500 animate-pulse';
+            
+            // Adicionar ao histórico
+            const history = document.getElementById('historyList');
+            const entry = document.createElement('div');
+            entry.className = 'p-4 flex justify-between items-center bg-black/20';
+            entry.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-500 font-mono text-xs">${time}</span>
+                    <span class="font-bold ${isUp ? 'text-green-400' : 'text-red-500'}">EUR/USD - ${isUp ? 'CALL' : 'PUT'}</span>
+                </div>
+                <span class="win-tag px-3 py-1 rounded-full text-[10px] font-bold">WIN</span>
+            `;
+            if(history.children.length > 5) history.lastChild.remove();
+            history.prepend(entry);
         }
-        setInterval(newSignal, 15000);
 
-        // 4. Funções de Botão e Calculadora
-        function trade(type) {
-            alert(type + ' executado! Aguardando resultado da análise...');
-        }
+        setInterval(updateSignal, 15000); // Sinal novo a cada 15 segundos
+        updateSignal();
 
-        function calcSoros() {
-            const val = parseFloat(document.getElementById('entryValue').value) || 0;
-            document.getElementById('lv1').innerText = 'R$ ' + (val * 1.85).toFixed(2);
-            document.getElementById('lv2').innerText = 'R$ ' + ((val * 1.85) * 1.85).toFixed(2);
+        function registrarClick(tipo) {
+            alert(tipo + " registrado no G.t-Binary Pro! Analisando expiração...");
         }
     </script>
 </body>
