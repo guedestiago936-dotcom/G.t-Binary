@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KimiBinary Pro - Análise para Opções Binárias</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        binary: {
+                            bg: '#050505',
+                            card: '#0a0a0a',
+                            surface: '#111111',
+                            accent: '#00ff88',
+                            call: '#00ff88',
+                            put: '#ff3366',
+                            neutral: '#ffaa00',
+                            info: '#00ccff'
+                        }
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'flash-green': 'flashGreen 0.5s ease-in-out',
+                        'flash-red': 'flashRed 0.5s ease-in-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                    },
+                    keyframes: {
+                        flashGreen: {
+                            '0%, 100%': { backgroundColor: 'transparent' },
+                            '50%': { backgroundColor: 'rgba(0, 255, 136, 0.3)' },
+                        },
+                        flashRed: {
+                            '0%, 100%': { backgroundColor: 'transparent' },
+                            '50%': { backgroundColor: 'rgba(255, 51, 102, 0.3)' },
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: #050505;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(17, 17, 17, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .neon-border-green {
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+        }
+        .neon-border-red {
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.3), inset 0 0 20px rgba(255, 51, 102, 0.05);
+            border: 1px solid rgba(255, 51, 102, 0.4);
+        }
+        .price-up { color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+        .price-down { color: #ff3366; text-shadow: 0 0 10px rgba(255, 51, 102, 0.5); }
+        .countdown-timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+        .signal-strength-bar {
+            background: linear-gradient(90deg, #ff3366 0%, #ffaa00 50%, #00ff88 100%);
+        }
+        .chart-grid {
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .btn-call {
+            background: linear-gradient(135deg, #00cc66 0%, #00ff88 100%);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+        }
+        .btn-put {
+            background: linear-gradient(135deg, #cc0033 0%, #ff3366 100%);
+            box-shadow: 0 4px 20px rgba(255, 51, 102, 0.4);
+        }
+        .btn-call:active, .btn-put:active {
+            transform: scale(0.95);
+        }
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 20px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background: #0a0a0a;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker 30s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+        .candle-green { background: #00ff88; }
+        .candle-red { background: #ff3366; }
+        .wick { width: 1px; background: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body class="min-h-screen bg-binary-bg">
+
+    <!-- Top Bar -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-binary-accent to-binary-info flex items-center justify-center shadow-lg shadow-binary-accent/30">
+                    <i class="fas fa-bolt text-black text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Kimi<span class="text-binary-accent">Binary</span> Pro</h1>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="w-2 h-2 bg-binary-accent rounded-full animate-pulse"></span>
+                        <span class="text-gray-400">SINAIS AO VIVO</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6">
+                <div class="text-center">
+                    <p class="text-xs text-gray-500">Win Rate Hoje</p>
+                    <p class="text-lg font-bold text-binary-accent metric-value">87.3%</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-500">Sinais</p>
+                    <p class="text-lg font-bold text-white metric-value">42</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-500">Lucro</p>
+                    <p class="text-lg font-bold text-binary-accent metric-value">+R$ 1.247</p>
+                </div>
+            </div>
+
+            <button class="bg-binary-surface border border-white/20 px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">
+                <i class="fas fa-user mr-2"></i>Conta Real
+            </button>
+        </div>
+    </header>
+
+    <!-- Ticker -->
+    <div class="ticker-wrap">
+        <div class="ticker text-sm font-mono py-2" id="ticker">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- Main Trading Interface -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Chart Section -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="glass-panel rounded-2xl p-1 border border-white/10">
+                    <!-- Chart Header -->
+                    <div class="flex items-center justify-between p-4 border-b border-white/5">
+                        <div class="flex items-center space-x-4">
+                            <select class="bg-binary-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm focus:border-binary-accent focus:outline-none">
+                                <option>EUR/USD</option>
+                                <option>GBP/USD</option>
+                                <option>USD/JPY</option>
+                                <option>AUD/USD</option>
+                                <option>USD/CHF</option>
+                                <option>XAU/USD</option>
+                            </select>
+                            <div class="flex space-x-1">
+                                <button class="px-3 py-1.5 bg-binary-accent/20 text-binary-accent rounded text-xs font-medium border border-binary-accent/30">M1</button>
+                                <button class="px-3 py-1.5 bg-binary-surface text-gray-400 rounded text-xs hover:text-white transition">M5</button>
+                                <button class="px-3 py-1.5 bg-binary-surface text-gray-400 rounded text-xs hover:text-white transition">M15</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs text-gray-500">Expiração:</span>
+                            <select class="bg-binary-surface border border-white/10 rounded-lg px-3 py-1.5 text-sm text-binary-accent font-mono">
+                                <option>5 minutos</option>
+                                <option>15 minutos</option>
+                                <option>30 minutos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Price Display -->
+                    <div class="flex items-center justify-between px-6 py-4 bg-binary-surface/30">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Preço Atual</p>
+                            <p class="text-4xl font-bold font-mono price-up transition-colors duration-300" id="currentPrice">1.08472</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500 mb-1">Variação (24h)</p>
+                            <p class="text-lg font-mono text-binary-accent">+0.24%</p>
+                        </div>
+                    </div>
+
+                    <!-- Chart Canvas -->
+                    <div class="relative h-80 p-4 chart-grid">
+                        <canvas id="binaryChart"></canvas>
+                        
+                        <!-- Signal Overlay -->
+                        <div id="signalOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-500">
+                            <div class="bg-black/80 backdrop-blur-xl border-2 rounded-2xl p-6 transform scale-110 shadow-2xl" id="signalBox">
+                                <div class="text-center">
+                                    <i class="fas fa-arrow-up text-6xl mb-2" id="signalIcon"></i>
+                                    <h3 class="text-3xl font-bold mb-1" id="signalText">CALL</h3>
+                                    <p class="text-sm text-gray-400" id="signalConfidence">Confiança: 92%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Indicators Bar -->
+                    <div class="grid grid-cols-5 gap-4 p-4 border-t border-white/5 text-center">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">RSI</p>
+                            <p class="text-sm font-bold font-mono text-binary-accent">62.4</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">MACD</p>
+                            <p class="text-sm font-bold font-mono text-binary-accent">▲</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">BB</p>
+                            <p class="text-sm font-bold font-mono text-gray-400">MID</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Volume</p>
+                            <p class="text-sm font-bold font-mono text-binary-accent">Alto</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Tendência</p>
+                            <p class="text-sm font-bold font-mono text-binary-accent">ALTA</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="glass-panel rounded-xl p-4 text-center border border-binary-accent/20">
+                        <p class="text-xs text-gray-500 mb-1">Suporte</p>
+                        <p class="text-lg font-bold font-mono text-white">1.0820</p>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 text-center border border-white/10">
+                        <p class="text-xs text-gray-500 mb-1">Pivot</p>
+                        <p class="text-lg font-bold font-mono text-binary-neutral">1.0845</p>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 text-center border border-white/10">
+                        <p class="text-xs text-gray-500 mb-1">Resistência</p>
+                        <p class="text-lg font-bold font-mono text-white">1.0870</p>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 text-center border border-binary-info/20">
+                        <p class="text-xs text-gray-500 mb-1">Volatilidade</p>
+                        <p class="text-lg font-bold font-mono text-binary-info">12.4%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Panel -->
+            <div class="space-y-4">
+                <!-- Signal Card -->
+                <div class="glass-panel rounded-2xl p-6 border border-binary-accent/30 neon-border-green relative overflow-hidden" id="mainSignal">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-binary-accent/10 rounded-full blur-3xl"></div>
+                    
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-3 py-1 bg-binary-accent/20 text-binary-accent rounded-full text-xs font-bold border border-binary-accent/30">
+                                <i class="fas fa-robot mr-1"></i>IA ATIVA
+                            </span>
+                            <span class="text-xs text-gray-400" id="nextCandle">Próxima vela: 00:47</span>
+                        </div>
+
+                        <div class="text-center mb-6">
+                            <h2 class="text-5xl font-bold mb-2" id="signalDirection">CALL</h2>
+                            <div class="flex items-center justify-center space-x-2 mb-4">
+                                <div class="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-binary-accent" style="width: 94%"></div>
+                                </div>
+                                <span class="text-sm font-bold text-binary-accent">94%</span>
+                            </div>
+                            <p class="text-sm text-gray-400">EUR/USD • M1 • 5min</p>
+                        </div>
+
+                        <div class="space-y-3 mb-6">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Força da Tendência</span>
+                                <span class="text-binary-accent font-bold">Forte</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Reversão Detectada</span>
+                                <span class="text-binary-accent font-bold">Sim</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Volume Confirmado</span>
+                                <span class="text-binary-accent font-bold">Sim</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <button class="btn-call py-4 rounded-xl font-bold text-black text-lg flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-binary-accent/50 transition active:scale-95">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>COMPRA</span>
+                            </button>
+                            <button class="btn-put py-4 rounded-xl font-bold text-white text-lg flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-binary-put/50 transition active:scale-95">
+                                <i class="fas fa-arrow-down"></i>
+                                <span>VENDA</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Martingale Calculator -->
+                <div class="glass-panel rounded-2xl p-5 border border-white/10">
+                    <h3 class="font-bold mb-4 flex items-center">
+                        <i class="fas fa-calculator text-binary-info mr-2"></i>
+                        Calculadora Soros
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-500">Entrada Inicial (R$)</label>
+                            <input type="number" value="20" class="w-full mt-1 bg-binary-surface border border-white/10 rounded-lg px-3 py-2 text-white font-mono focus:border-binary-accent focus:outline-none" id="initialEntry">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-gray-500">Retorno %</label>
+                                <input type="number" value="85" class="w-full mt-1 bg-binary-surface border border-white/10 rounded-lg px-3 py-2 text-white font-mono" id="payoutPercent">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">Níveis</label>
+                                <select class="w-full mt-1 bg-binary-surface border border-white/10 rounded-lg px-3 py-2 text-white" id="martingaleLevels">
+                                    <option value="2">2 (Conservador)</option>
+                                    <option value="3" selected>3 (Moderado)</option>
+                                    <option value="4">4 (Agressivo)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-binary-surface/50 rounded-lg p-3 space-y-2 mt-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Nível 1:</span>
+                                <span class="font-mono font-bold" id="level1">R$ 20,00</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">Nível 2:</span>
+                                <span class="font-mono font-bold text-yellow-400" id="level2">R$ 44,00</span>
+                            </div>
