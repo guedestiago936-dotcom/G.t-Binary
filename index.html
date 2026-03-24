@@ -1,209 +1,76 @@
-//@version=5
-indicator("Professional Trading Indicator", shorttitle="Pro Trader", overlay=true, max_lines_count=500, max_labels_count=500)
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G.t-Binary PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #050505; color: white; font-family: sans-serif; }
+        .glass { background: #111; border: 1px solid #333; border-radius: 20px; }
+        .candle { width: 8px; border-radius: 2px; position: relative; }
+        .up { background: #00ff88; }
+        .down { background: #ff3366; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-md mx-auto space-y-4">
+        <div class="glass p-4 flex justify-between items-center">
+            <h1 class="font-bold text-green-500">G.t-Binary PRO</h1>
+            <div id="price" class="font-mono font-bold text-xl text-green-400">1.08525</div>
+        </div>
 
-// Input groups
-group_indicators = "Indicator Settings"
-group_signals = "Signal Settings"
-group_risk = "Risk Management"
+        <div class="glass h-48 flex items-end justify-center gap-1 p-4" id="chart">
+            </div>
 
-// Indicator parameters
-ema_fast_length = input.int(9, "EMA Fast", group=group_indicators, minval=1)
-ema_slow_length = input.int(21, "EMA Slow", group=group_indicators, minval=1)
-ema_trend_length = input.int(50, "EMA Trend", group=group_indicators, minval=1)
-rsi_length = input.int(14, "RSI Period", group=group_indicators, minval=1)
-macd_fast = input.int(12, "MACD Fast", group=group_indicators, minval=1)
-macd_slow = input.int(26, "MACD Slow", group=group_indicators, minval=1)
-macd_signal_len = input.int(9, "MACD Signal", group=group_indicators, minval=1)
-bollinger_length = input.int(20, "Bollinger Period", group=group_indicators, minval=1)
-bollinger_std = input.float(2.0, "Bollinger StdDev", group=group_indicators, minval=0.1, step=0.1)
-atr_length = input.int(14, "ATR Period", group=group_indicators, minval=1)
-adx_length = input.int(14, "ADX Period", group=group_indicators, minval=1)
-stoch_k = input.int(14, "Stochastic %K", group=group_indicators, minval=1)
-stoch_d = input.int(3, "Stochastic %D", group=group_indicators, minval=1)
+        <div class="glass p-6 text-center space-y-4">
+            <div id="timerLabel" class="text-xs text-gray-500 uppercase">Analisando Mercado...</div>
+            <div id="countdown" class="text-4xl font-mono font-bold text-blue-500">00:10</div>
+            
+            <div id="signal" class="text-5xl font-black py-4 text-gray-800">AGUARDAR</div>
 
-// Signal settings
-signal_threshold = input.int(5, "Signal Threshold", group=group_signals, minval=1, maxval=10)
-use_ema_cross = input.bool(true, "Use EMA Crossover", group=group_signals)
-use_macd = input.bool(true, "Use MACD", group=group_signals)
-use_rsi = input.bool(true, "Use RSI", group=group_signals)
-use_stoch = input.bool(true, "Use Stochastic", group=group_signals)
-use_bb = input.bool(true, "Use Bollinger Bands", group=group_signals)
-use_candles = input.bool(true, "Use Candlestick Patterns", group=group_signals)
-use_adx = input.bool(true, "Use ADX", group=group_signals)
-use_vwap = input.bool(true, "Use VWAP", group=group_signals)
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-green-600/20 text-green-500 p-4 rounded-xl font-bold border border-green-500/30 text-center">COMPRA</div>
+                <div class="bg-red-600/20 text-red-500 p-4 rounded-xl font-bold border border-red-500/30 text-center">VENDA</div>
+            </div>
+        </div>
+    </div>
 
-// Risk management
-atr_multiplier_sl = input.float(2.0, "ATR Multiplier SL", group=group_risk, minval=0.5, step=0.1)
-atr_multiplier_tp = input.float(3.0, "ATR Multiplier TP", group=group_risk, minval=0.5, step=0.1)
+    <script>
+        const chart = document.getElementById('chart');
+        const priceEl = document.getElementById('price');
+        const countdownEl = document.getElementById('countdown');
+        const signalEl = document.getElementById('signal');
+        let timer = 10;
 
-// Calculate indicators
-ema_fast = ta.ema(close, ema_fast_length)
-ema_slow = ta.ema(close, ema_slow_length)
-ema_trend = ta.ema(close, ema_trend_length)
-vwap_val = ta.vwap(hlc3)
-rsi_val = ta.rsi(close, rsi_length)
-[macd_line, macd_signal_line, macd_hist] = ta.macd(close, macd_fast, macd_slow, macd_signal_len)
-bb_basis = ta.sma(close, bollinger_length)
-bb_dev = bollinger_std * ta.stdev(close, bollinger_length)
-bb_upper = bb_basis + bb_dev
-bb_lower = bb_basis - bb_dev
-atr_val = ta.atr(atr_length)
-adx_val = ta.adx(high, low, close, adx_length)
-stoch_k_val = ta.stoch(close, high, low, stoch_k)
-stoch_d_val = ta.sma(stoch_k_val, stoch_d)
+        // Função para criar velas visuais
+        function addCandle() {
+            const isUp = Math.random() > 0.5;
+            const height = Math.floor(Math.random() * 60) + 20;
+            const candle = document.createElement('div');
+            candle.className = candle ${isUp ? 'up' : 'down'};
+            candle.style.height = height + 'px';
+            if(chart.children.length > 20) chart.removeChild(chart.firstChild);
+            chart.appendChild(candle);
+        }
 
-// Hull MA calculation
-hull_ma(length) =>
-    half_length = math.round(length / 2)
-    sqrt_length = math.round(math.sqrt(length))
-    wma_half = ta.wma(close, half_length)
-    wma_full = ta.wma(close, length)
-    raw_hma = 2 * wma_half - wma_full
-    ta.wma(raw_hma, sqrt_length)
+        setInterval(() => {
+            // Atualiza Preço
+            let p = parseFloat(priceEl.innerText);
+            p += (Math.random() - 0.5) * 0.0001;
+            priceEl.innerText = p.toFixed(5);
+            addCandle();
 
-hma_val = hull_ma(21)
-
-// Candlestick pattern detection
-body = close - open
-upper_shadow = high - math.max(open, close)
-lower_shadow = math.min(open, close) - low
-total_range = high - low
-
-is_hammer = (lower_shadow > 2 * math.abs(body)) and (upper_shadow < 0.3 * total_range) and (body > 0)
-is_shooting_star = (upper_shadow > 2 * math.abs(body)) and (lower_shadow < 0.3 * total_range) and (body < 0)
-is_bullish_engulfing = (body[1] < 0) and (body > 0) and (open < close[1]) and (close > open[1])
-is_bearish_engulfing = (body[1] > 0) and (body < 0) and (open > close[1]) and (close < open[1])
-is_doji = math.abs(body) < 0.1 * total_range
-is_morning_star = (body[2] < 0) and (math.abs(body[1]) < 0.3 * total_range[1]) and (body > 0) and (close > (open[2] + close[2]) / 2)
-is_evening_star = (body[2] > 0) and (math.abs(body[1]) < 0.3 * total_range[1]) and (body < 0) and (close < (open[2] + close[2]) / 2)
-is_inverted_hammer = (upper_shadow > 2 * math.abs(body)) and (lower_shadow < 0.3 * total_range) and (body > 0)
-is_harami_bull = (body[1] < 0) and (body > 0) and (high < open[1]) and (low > close[1])
-is_harami_bear = (body[1] > 0) and (body < 0) and (high < close[1]) and (low > open[1])
-
-// Scoring system
-var float score = 0
-score := 0
-
-if use_ema_cross
-    if ema_fast > ema_slow and ema_slow > ema_trend
-        if ema_fast[1] <= ema_slow[1]
-            score += 2
-    else if ema_fast < ema_slow and ema_slow < ema_trend
-        if ema_fast[1] >= ema_slow[1]
-            score -= 2
-
-if use_rsi
-    if rsi_val > 30 and rsi_val < 70
-        score += 1
-    if rsi_val < 30
-        score += 2
-    if rsi_val > 70
-        score -= 2
-
-if use_macd
-    if macd_hist > 0 and macd_hist[1] <= 0
-        score += 2
-    else if macd_hist < 0 and macd_hist[1] >= 0
-        score -= 2
-
-if use_stoch
-    if stoch_k_val > stoch_d_val and stoch_k_val[1] <= stoch_d_val[1] and stoch_k_val < 80
-        score += 1
-    else if stoch_k_val < stoch_d_val and stoch_k_val[1] >= stoch_d_val[1] and stoch_k_val > 20
-        score -= 1
-
-if use_candles
-    if is_hammer or is_bullish_engulfing or is_morning_star or is_harami_bull or is_inverted_hammer
-        score += 3
-    if is_shooting_star or is_bearish_engulfing or is_evening_star or is_harami_bear
-        score -= 3
-
-if use_adx and adx_val > 25
-    score += 1
-
-if use_vwap
-    if close > vwap_val
-        score += 1
-    else
-        score -= 1
-
-if use_bb
-    if close < bb_lower
-        score += 2
-    else if close > bb_upper
-        score -= 2
-
-if hma_val > hma_val[1] and close > hma_val
-    score += 1
-else if hma_val < hma_val[1] and close < hma_val
-    score -= 1
-
-// Signal generation
-buy_signal = score >= signal_threshold and score[1] < signal_threshold
-sell_signal = score <= -signal_threshold and score[1] > -signal_threshold
-
-// Risk calculations
-buy_sl = buy_signal ? close - (atr_multiplier_sl * atr_val) : na
-buy_tp = buy_signal ? close + (atr_multiplier_tp * atr_val) : na
-sell_sl = sell_signal ? close + (atr_multiplier_sl * atr_val) : na
-sell_tp = sell_signal ? close - (atr_multiplier_tp * atr_val) : na
-
-// Plot moving averages
-plot(ema_fast, "EMA Fast", color=color.new(#00d2ff, 0), linewidth=1)
-plot(ema_slow, "EMA Slow", color=color.new(#ff6b9d, 0), linewidth=1)
-plot(ema_trend, "EMA Trend", color=color.new(#c8a2ff, 0), linewidth=2)
-plot(hma_val, "Hull MA", color=color.new(#ffd700, 0), linewidth=1)
-plot(vwap_val, "VWAP", color=color.new(#ffa502, 0), linewidth=1, style=plot.style_cross)
-
-// Plot Bollinger Bands
-plot(bb_upper, "BB Upper", color=color.new(color.white, 70), linewidth=1)
-plot(bb_lower, "BB Lower", color=color.new(color.white, 70), linewidth=1)
-fill(bb_upper, bb_lower, color=color.new(color.white, 90), title="BB Fill")
-
-// Plot EMA crossovers
-plotshape(ta.crossover(ema_fast, ema_slow), "EMA Bull Cross", shape.triangleup, location.belowbar, color.new(#00d084, 0), size=size.small)
-plotshape(ta.crossunder(ema_fast, ema_slow), "EMA Bear Cross", shape.triangledown, location.abovebar, color.new(#ff4757, 0), size=size.small)
-
-// Plot main signals
-plotshape(buy_signal, "Buy Signal", shape.triangleup, location.belowbar, color.new(#00d084, 0), text="BUY", textcolor=color.new(#00d084, 0), size=size.normal)
-plotshape(sell_signal, "Sell Signal", shape.triangledown, location.abovebar, color.new(#ff4757, 0), text="SELL", textcolor=color.new(#ff4757, 0), size=size.normal)
-
-// Draw SL/TP lines for buy signals
-var line buy_sl_line = na
-var line buy_tp_line = na
-var label buy_label = na
-
-if buy_signal
-    if not na(buy_sl_line)
-        line.delete(buy_sl_line)
-        line.delete(buy_tp_line)
-    if not na(buy_label)
-        label.delete(buy_label)
-    buy_sl_line := line.new(bar_index, buy_sl, bar_index + 20, buy_sl, color=color.new(#ff4757, 0), style=line.style_dashed, width=1)
-    buy_tp_line := line.new(bar_index, buy_tp, bar_index + 20, buy_tp, color=color.new(#00d084, 0), style=line.style_dashed, width=1)
-    buy_label_text = "Score: " + str.tostring(score) + "/10 | SL: " + str.tostring(buy_sl, "#.##") + " | TP: " + str.tostring(buy_tp, "#.##")
-    buy_label := label.new(bar_index, low, buy_label_text, color=color.new(#00d084, 80), textcolor=color.white, style=label.style_label_up, size=size.small, yloc=yloc.belowbar)
-
-// Draw SL/TP lines for sell signals
-var line sell_sl_line = na
-var line sell_tp_line = na
-var label sell_label = na
-
-if sell_signal
-    if not na(sell_sl_line)
-        line.delete(sell_sl_line)
-        line.delete(sell_tp_line)
-    if not na(sell_label)
-        label.delete(sell_label)
-    sell_sl_line := line.new(bar_index, sell_sl, bar_index + 20, sell_sl, color=color.new(#ff4757, 0), style=line.style_dashed, width=1)
-    sell_tp_line := line.new(bar_index, sell_tp, bar_index + 20, sell_tp, color=color.new(#00d084, 0), style=line.style_dashed, width=1)
-    sell_label_text = "Score: " + str.tostring(math.abs(score)) + "/10 | SL: " + str.tostring(sell_sl, "#.##") + " | TP: " + str.tostring(sell_tp, "#.##")
-    sell_label := label.new(bar_index, high, sell_label_text, color=color.new(#ff4757, 80), textcolor=color.white, style=label.style_label_down, size=size.small, yloc=yloc.abovebar)
-
-// Optional candlestick pattern markers
-show_candles = input.bool(true, "Show Candlestick Patterns")
-plotshape(show_candles and is_hammer, "Hammer", shape.triangleup, location.belowbar, color.new(#00d084, 50), size=size.tiny, offset=-1)
-plotshape(show_candles and is_shooting_star, "Shooting Star", shape.triangledown, location.abovebar, color.new(#ff4757, 50), size=size.tiny, offset=-1)
-plotshape(show_candles and is_bullish_engulfing, "Bullish Engulfing", shape.square, location.belowbar, color.new(#00d084, 50), size=size.tiny, offset=-1)
-plotshape(show_candles and is_bearish_engulfing, "Bearish Engulfing", shape.square, location.abovebar, color.new(#ff4757, 50), size=size.tiny, offset=-1)
-plotshape(show_candles and is_do<response clipped><NOTE>Result is longer than *10000 characters, will be **truncated*.</NOTE>
+            // Lógica do Sinal
+            timer--;
+            if(timer < 0) {
+                timer = 10;
+                const win = Math.random() > 0.5;
+                signalEl.innerText = win ? "CALL" : "PUT";
+                signalEl.className = win ? "text-5xl font-black py-4 text-green-500 animate-bounce" : "text-5xl font-black py-4 text-red-500 animate-bounce";
+            }
+            countdownEl.innerText = 00:${timer < 10 ? '0'+timer : timer};
+        }, 1000);
+    </script>
+</body>
+</html>
