@@ -3,74 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G.t-Binary PRO</title>
+    <title>G.t-Binary PRO - Candles</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #050505; color: white; font-family: sans-serif; }
-        .glass { background: #111; border: 1px solid #333; border-radius: 20px; }
-        .candle { width: 8px; border-radius: 2px; position: relative; }
-        .up { background: #00ff88; }
-        .down { background: #ff3366; }
+        body { background: #050505; color: #ffffff; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(17, 17, 17, 0.98); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-text-green { color: #00ff88; text-shadow: 0 0 15px rgba(0, 255, 136, 0.4); }
+        .neon-text-red { color: #ff3366; text-shadow: 0 0 15px rgba(255, 51, 102, 0.4); }
     </style>
 </head>
-<body class="p-4">
-    <div class="max-w-md mx-auto space-y-4">
-        <div class="glass p-4 flex justify-between items-center">
-            <h1 class="font-bold text-green-500">G.t-Binary PRO</h1>
-            <div id="price" class="font-mono font-bold text-xl text-green-400">1.08525</div>
+<body class="min-h-screen p-4">
+    <div class="max-w-6xl mx-auto space-y-4">
+        
+        <div class="glass p-5 rounded-3xl flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-black">G.t-<span class="text-green-500">Binary</span> PRO</h1>
+                <div class="flex items-center text-[10px] text-gray-500 tracking-widest uppercase">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></span> Mercado Aberto
+                </div>
+            </div>
+            <div id="priceDisplay" class="text-2xl font-mono font-bold text-green-400">1.08525</div>
         </div>
 
-        <div class="glass h-48 flex items-end justify-center gap-1 p-4" id="chart">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 glass rounded-3xl overflow-hidden h-[450px] relative" id="chartContainer">
+                <div class="absolute top-4 left-4 z-10 bg-black/60 px-3 py-1 rounded text-xs font-mono">EUR/USD - M1</div>
             </div>
 
-        <div class="glass p-6 text-center space-y-4">
-            <div id="timerLabel" class="text-xs text-gray-500 uppercase">Analisando Mercado...</div>
-            <div id="countdown" class="text-4xl font-mono font-bold text-blue-500">00:10</div>
-            
-            <div id="signal" class="text-5xl font-black py-4 text-gray-800">AGUARDAR</div>
+            <div class="space-y-4">
+                <div class="glass p-6 rounded-3xl text-center relative overflow-hidden">
+                    <p class="text-gray-400 text-xs font-bold uppercase mb-2">Próxima Entrada</p>
+                    
+                    <div id="signalDir" class="text-6xl font-black mb-4 tracking-tighter text-gray-700">AGUARDANDO</div>
+                    
+                    <div class="bg-white/5 rounded-2xl py-3 px-4 mb-6">
+                        <p class="text-[10px] text-gray-500 uppercase mb-1">Analisando em...</p>
+                        <div id="timer" class="text-3xl font-mono font-bold text-blue-400">00:15</div>
+                    </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-green-600/20 text-green-500 p-4 rounded-xl font-bold border border-green-500/30 text-center">COMPRA</div>
-                <div class="bg-red-600/20 text-red-500 p-4 rounded-xl font-bold border border-red-500/30 text-center">VENDA</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="bg-green-500 hover:bg-green-400 py-4 rounded-2xl font-bold text-black shadow-lg shadow-green-900/20 active:scale-95 transition">COMPRA</button>
+                        <button class="bg-red-500 hover:bg-red-400 py-4 rounded-2xl font-bold shadow-lg shadow-red-900/20 active:scale-95 transition">VENDA</button>
+                    </div>
+                </div>
+
+                <div class="glass p-5 rounded-3xl">
+                    <p class="text-xs font-bold text-gray-500 mb-3 uppercase tracking-tighter">Sinais Anteriores</p>
+                    <div id="miniHistory" class="space-y-2">
+                        </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const chart = document.getElementById('chart');
-        const priceEl = document.getElementById('price');
-        const countdownEl = document.getElementById('countdown');
-        const signalEl = document.getElementById('signal');
-        let timer = 10;
+        // Configuração do Gráfico de Velas (Lightweight Charts)
+        const chartElement = document.getElementById('chartContainer');
+        const chart = LightweightCharts.createChart(chartElement, {
+            layout: { backgroundColor: '#0a0a0a', textColor: '#d1d4dc' },
+            grid: { vertLines: { color: '#1f2937' }, horzLines: { color: '#1f2937' } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            rightPriceScale: { borderColor: '#1f2937' },
+            timeScale: { borderColor: '#1f2937', timeVisible: true },
+        });
 
-        // Função para criar velas visuais
-        function addCandle() {
-            const isUp = Math.random() > 0.5;
-            const height = Math.floor(Math.random() * 60) + 20;
-            const candle = document.createElement('div');
-            candle.className = candle ${isUp ? 'up' : 'down'};
-            candle.style.height = height + 'px';
-            if(chart.children.length > 20) chart.removeChild(chart.firstChild);
-            chart.appendChild(candle);
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: '#00ff88', downColor: '#ff3366', borderDownColor: '#ff3366',
+            borderUpColor: '#00ff88', wickDownColor: '#ff3366', wickUpColor: '#00ff88',
+        });
+
+        // Gerar dados iniciais de velas
+        let lastClose = 1.08525;
+        let data = [];
+        let time = Math.floor(Date.now() / 1000) - 150 * 60;
+        for (let i = 0; i < 150; i++) {
+            const open = lastClose;
+            const close = open + (Math.random() - 0.5) * 0.001;
+            const high = Math.max(open, close) + Math.random() * 0.0005;
+            const low = Math.min(open, close) - Math.random() * 0.0005;
+            data.push({ time: time, open, high, low, close });
+            lastClose = close;
+            time += 60;
+        }
+        candleSeries.setData(data);
+
+        // Atualização em tempo real (Tick)
+        setInterval(() => {
+            const lastCandle = data[data.length - 1];
+            const newClose = lastCandle.close + (Math.random() - 0.5) * 0.0001;
+            lastCandle.close = newClose;
+            lastCandle.high = Math.max(lastCandle.high, newClose);
+            lastCandle.low = Math.min(lastCandle.low, newClose);
+            candleSeries.update(lastCandle);
+            document.getElementById('priceDisplay').innerText = newClose.toFixed(5);
+        }, 1000);
+
+        // Lógica do Timer e Sinais
+        let timeLeft = 15;
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            const signalEl = document.getElementById('signalDir');
+            
+            setInterval(() => {
+                timeLeft--;
+                if (timeLeft < 0) {
+                    timeLeft = 15; // Reinicia o ciclo de análise
+                    gerarNovoSinal();
+                }
+                timerEl.innerText = 00:${timeLeft < 10 ? '0' + timeLeft : timeLeft};
+                
+                // Muda a cor do timer quando está chegando a hora
+                if (timeLeft <= 5) timerEl.className = "text-3xl font-mono font-bold text-yellow-500 animate-pulse";
+                else timerEl.className = "text-3xl font-mono font-bold text-blue-400";
+            }, 1000);
         }
 
-        setInterval(() => {
-            // Atualiza Preço
-            let p = parseFloat(priceEl.innerText);
-            p += (Math.random() - 0.5) * 0.0001;
-            priceEl.innerText = p.toFixed(5);
-            addCandle();
+        function gerarNovoSinal() {
+            const isUp = Math.random() > 0.5;
+            const signalEl = document.getElementById('signalDir');
+            const direction = isUp ? 'CALL' : 'PUT';
+            
+            signalEl.innerText = direction;
+            signalEl.className = isUp ? "text-6xl font-black mb-4 neon-text-green animate-bounce" : "text-6xl font-black mb-4 neon-text-red animate-bounce";
+            
+            // Adicionar ao mini histórico
+            const hist = document.getElementById('miniHistory');
+            const item = document.createElement('div');
+            item.className = "flex justify-between items-center text-xs bg-white/5 p-2 rounded-xl";
+            item.innerHTML = <span>${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span> <b class="${isUp ? 'text-green-400' : 'text-red-500'}">${direction}</b> <span class="text-green-500 font-bold italic">WIN</span>;
+            if (hist.children.length > 3) hist.lastChild.remove();
+            hist.prepend(item);
+        }
 
-            // Lógica do Sinal
-            timer--;
-            if(timer < 0) {
-                timer = 10;
-                const win = Math.random() > 0.5;
-                signalEl.innerText = win ? "CALL" : "PUT";
-                signalEl.className = win ? "text-5xl font-black py-4 text-green-500 animate-bounce" : "text-5xl font-black py-4 text-red-500 animate-bounce";
-            }
-            countdownEl.innerText = 00:${timer < 10 ? '0'+timer : timer};
-        }, 1000);
+        startTimer();
     </script>
 </body>
 </html>
